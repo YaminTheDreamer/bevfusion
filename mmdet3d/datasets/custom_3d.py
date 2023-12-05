@@ -35,6 +35,7 @@ class Custom3DDataset(Dataset):
 
             - 'LiDAR': Box in LiDAR coordinates.
             - 'Depth': Box in depth coordinates, usually for indoor dataset.
+            室内场景用Depth Coordinate
             - 'Camera': Box in camera coordinates.
         filter_empty_gt (bool, optional): Whether to filter empty GT.
             Defaults to True.
@@ -75,11 +76,14 @@ class Custom3DDataset(Dataset):
         self.epoch = -1
     
     def set_epoch(self, epoch):
+        """给能设定epoch的transform设定好
+           transform
+        """
         self.epoch = epoch
         if hasattr(self, "pipeline"):
             for transform in self.pipeline.transforms:
                 if hasattr(transform, "set_epoch"):
-                    transform.set_epoch(epoch)
+                    transform.set_epoch(epoch)  #有一些transform会随着训练减弱
         
     def load_annotations(self, ann_file):
         """Load annotations from ann_file.
@@ -93,8 +97,8 @@ class Custom3DDataset(Dataset):
         return mmcv.load(ann_file)
 
     def get_data_info(self, index):
-        """Get data info according to the given index.
-
+        """Get data info according to the given index.所谓data info主要是数据地址和标注，高纬的点云图像数据没有
+        
         Args:
             index (int): Index of the sample data to get.
 
@@ -103,7 +107,7 @@ class Custom3DDataset(Dataset):
                 preprocessing pipelines. It includes the following keys:
 
                 - sample_idx (str): Sample index.
-                - lidar_path (str): Filename of point clouds.
+                - lidar_path (str): Filename of point clouds. # 默认都是带着lidar但是没有图像
                 - file_name (str): Filename of point clouds.
                 - ann_info (dict): Annotation info.
         """
@@ -123,8 +127,8 @@ class Custom3DDataset(Dataset):
         return input_dict
 
     def pre_pipeline(self, results):
-        """Initialization before data preparation.
-
+        """Initialization before data preparation.没有真的拿出来数据主要是增加一下关键信息key内容为空
+           
         Args:
             results (dict): Dict before data preprocessing.
 
@@ -160,8 +164,8 @@ class Custom3DDataset(Dataset):
         input_dict = self.get_data_info(index)
         if input_dict is None:
             return None
-        self.pre_pipeline(input_dict)
-        example = self.pipeline(input_dict)
+        self.pre_pipeline(input_dict)  # 没有真的拿出数据，增加key
+        example = self.pipeline(input_dict)  # 真实取数据并预处理
         if self.filter_empty_gt and (
             example is None or ~(example["gt_labels_3d"]._data != -1).any()
         ):
