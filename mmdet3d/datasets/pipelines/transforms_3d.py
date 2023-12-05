@@ -261,13 +261,13 @@ class GridMask:
     def set_epoch(self, epoch):
         self.epoch = epoch
         if not self.fixed_prob:
-            self.set_prob(self.epoch, self.max_epoch)
+            self.set_prob(self.epoch, self.max_epoch)  # 训练进度
 
     def set_prob(self, epoch, max_epoch):
-        self.prob = self.st_prob * self.epoch / self.max_epoch
+        self.prob = self.st_prob * self.epoch / self.max_epoch # 训练进度越来越可能
 
     def __call__(self, results):
-        if np.random.rand() > self.prob:
+        if np.random.rand() > self.prob: # 随着训练进度越来越不做
             return results
         imgs = results["img"]
         h = imgs[0].shape[0]
