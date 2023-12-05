@@ -207,36 +207,36 @@ class NuScenesDataset(Custom3DDataset):
         return data_infos
 
     def get_data_info(self, index: int) -> Dict[str, Any]:
-        info = self.data_infos[index]
+        info = self.data_infos[index]  # data_info = 路径+gt, data_infos是一个list
 
         data = dict(
-            token=info["token"],
-            sample_idx=info['token'],
-            lidar_path=info["lidar_path"],
-            sweeps=info["sweeps"],
-            timestamp=info["timestamp"],
-            location=info.get('location', None), 
-            radar=info.get('radars', None), 
+            token=info["token"],  # token确实有点奇怪，其实就是主键，需要唯一性，适合寻找每一帧！   
+            sample_idx=info['token'],  # token确实有点奇怪但是好像其他都不错的
+            lidar_path=info["lidar_path"], #lidar信息
+            sweeps=info["sweeps"],  #拼帧数量
+            timestamp=info["timestamp"],  #时间点
+            location=info.get('location', None), #定位信息
+            radar=info.get('radars', None), #radar数据
         )
 
-        if data['location'] is None:
+        if data['location'] is None:  # 两个玩意儿空也不要
             data.pop('location')
         if data['radar'] is None:
             data.pop('radar')
 
-        # ego to global transform
+        # ego to global transform  车体坐标系到全局坐标系
         ego2global = np.eye(4).astype(np.float32)
         ego2global[:3, :3] = Quaternion(info["ego2global_rotation"]).rotation_matrix
         ego2global[:3, 3] = info["ego2global_translation"]
         data["ego2global"] = ego2global
 
-        # lidar to ego transform
+        # lidar to ego transform 激光坐标系到车体坐标系
         lidar2ego = np.eye(4).astype(np.float32)
         lidar2ego[:3, :3] = Quaternion(info["lidar2ego_rotation"]).rotation_matrix
         lidar2ego[:3, 3] = info["lidar2ego_translation"]
         data["lidar2ego"] = lidar2ego
 
-        if self.modality["use_camera"]:
+        if self.modality["use_camera"]:  #如果有camera初始化camera相关的key
             data["image_paths"] = []
             data["lidar2camera"] = []
             data["lidar2image"] = []
@@ -244,10 +244,10 @@ class NuScenesDataset(Custom3DDataset):
             data["camera_intrinsics"] = []
             data["camera2lidar"] = []
 
-            for _, camera_info in info["cams"].items():
-                data["image_paths"].append(camera_info["data_path"])
+            for _, camera_info in info["cams"].items():  #每个相机单独处理：单相机对应图像位置、相机和其他坐标系转换方式
+                data["image_paths"].append(camera_info["data_path"])  
 
-                # lidar to camera transform
+                # lidar to camera transform  lidar内的结果在相机坐标系内的情况
                 lidar2camera_r = np.linalg.inv(camera_info["sensor2lidar_rotation"])
                 lidar2camera_t = (
                     camera_info["sensor2lidar_translation"] @ lidar2camera_r.T
@@ -257,7 +257,7 @@ class NuScenesDataset(Custom3DDataset):
                 lidar2camera_rt[3, :3] = -lidar2camera_t
                 data["lidar2camera"].append(lidar2camera_rt.T)
 
-                # camera intrinsics
+                # camera intrinsics 
                 camera_intrinsics = np.eye(4).astype(np.float32)
                 camera_intrinsics[:3, :3] = camera_info["cam_intrinsic"]
                 data["camera_intrinsics"].append(camera_intrinsics)
@@ -397,7 +397,7 @@ class NuScenesDataset(Custom3DDataset):
                 annos.append(nusc_anno)
             nusc_annos[sample_token] = annos
         nusc_submissions = {
-            "meta": self.modality,
+            "meta": self.modality, # modality只是用来做了submission
             "results": nusc_annos,
         }
 
