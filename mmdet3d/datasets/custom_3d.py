@@ -164,8 +164,8 @@ class Custom3DDataset(Dataset):
         input_dict = self.get_data_info(index)
         if input_dict is None:
             return None
-        self.pre_pipeline(input_dict)  # 没有真的拿出数据，增加key
-        example = self.pipeline(input_dict)  # 真实取数据并预处理
+        self.pre_pipeline(input_dict)  # 数据路径+gt
+        example = self.pipeline(input_dict)  # 真实取数据并预处理，预处理并没有被modality修改，所以预处理和modality需要同时开关
         if self.filter_empty_gt and (
             example is None or ~(example["gt_labels_3d"]._data != -1).any()
         ):
@@ -173,7 +173,7 @@ class Custom3DDataset(Dataset):
         return example
 
     def prepare_test_data(self, index):
-        """Prepare data for testing.
+        """Prepare data for testing. test和train在数据预处理没什么太大的区别。
 
         Args:
             index (int): Index for accessing the target data.
